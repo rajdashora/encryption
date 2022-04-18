@@ -73,8 +73,14 @@ struct segdesc {
 // page directory index
 #define PDX(va)         (((uint)(va) >> PDXSHIFT) & 0x3FF)
 
+
 // page table index
-#define PTX(va)         (((uint)(va) >> PTXSHIFT) & 0x3FF)
+#define MAX_PTX         0x3FF
+#define PTX(va)         (((uint)(va) >> PTXSHIFT) & MAX_PTX)
+//p4Debug : Break down into Page Directory Entry and Offset inside
+#define PPN(pa)         ((uint)(pa) >> PTXSHIFT)
+#define OFFSET(va)      ((uint)(va) & 0xFFF)
+
 
 // construct virtual address from indexes and offset
 #define PGADDR(d, t, o) ((uint)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
@@ -94,7 +100,12 @@ struct segdesc {
 #define PTE_P           0x001   // Present
 #define PTE_W           0x002   // Writeable
 #define PTE_U           0x004   // User
+#define PTE_A           0x020
 #define PTE_PS          0x080   // Page Size
+//p4Debug: Added PTE_E flag for encrypted pages.
+//You have 12 bits for flags according
+//to page 30 of the textbook
+#define PTE_E           0x400
 
 // Address in page table or page directory entry
 #define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)

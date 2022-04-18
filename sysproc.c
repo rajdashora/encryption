@@ -8,16 +8,6 @@
 #include "proc.h"
 
 int
-sys_demo(void)
-{
-  complexData* cData;
-  if( argptr(0, (void*)&cData, sizeof(*cData) ) < 0) 
-    return -1;
-
-  return demo(cData);
-}
-
-int
 sys_fork(void)
 {
   return fork();

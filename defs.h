@@ -111,7 +111,6 @@ void            exit(void);
 int             fork(void);
 int             growproc(int);
 int             kill(int);
-int             demo(complexData*);
 struct cpu*     mycpu(void);
 struct proc*    myproc();
 void            pinit(void);

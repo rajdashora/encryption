@@ -473,28 +473,6 @@ wakeup(void *chan)
   release(&ptable.lock);
 }
 
-
-// Demo syscall to return killed status.
-int
-demo(complexData* cData)
-{
-  if(!cData)
-    return -1;
-  
-  
-  cprintf(" cData->aInt %d \n",  cData->aInt );
-  cprintf(" cData->aChar %d \n",  cData->aChar );
-  cprintf(" cData->aDouble %s \n",  cData->aStr );
-
-  const char* data = "Recv";
-  for(int i = 0; i < 4; i++)
-    cData->aStr[i] = data[i];
-  cData->aStr[4] = '\0';
-  cData->aInt++;
-  cData->aChar = 'b';
-
-  return 0;
-}
 // Kill the process with the given pid.
 // Process won't exit until it returns
 // to user space (see trap in trap.c).

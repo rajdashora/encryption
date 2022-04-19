@@ -17,3 +17,8 @@ mkfs
 *.desc
 *.out
 *.in
+*.err
+*.run
+*.rc
+test_*
+pre

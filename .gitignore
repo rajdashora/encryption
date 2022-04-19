@@ -14,11 +14,7 @@ kernel
 kernelmemfs
 mkfs
 .gdbinit
-*.desc
-*.out
-*.in
-*.err
-*.run
-*.rc
-test_*
-pre
+537_sp22_test_tmp/*
+tester/*
+tests/*
+tests-out/*

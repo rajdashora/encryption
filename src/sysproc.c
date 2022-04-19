@@ -117,7 +117,7 @@ int sys_getpgtable(void)
   {
     return -1;
   }
-  if (argint(1, &wsetOnly) != 0 || argint(1, &wsetOnly) != 1)
+  if (argint(2, &wsetOnly) < 0 || argint(2, &wsetOnly) < 0)
     return -1;
 
   return getpgtable(entries, num, wsetOnly);

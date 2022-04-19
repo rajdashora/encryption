@@ -461,11 +461,13 @@ int mdecrypt(char *virtual_addr)
     *slider = *slider ^ 0xFF;
     slider++;
   }
+  queue_add(pte, p);
   return 0;
 }
 
 int mencrypt(char *virtual_addr, int len)
 {
+
   cprintf("p4Debug: mencrypt: %p %d\n", virtual_addr, len);
   // the given pointer is a virtual address in this pid's userspace
   struct proc *p = myproc();
@@ -475,15 +477,19 @@ int mencrypt(char *virtual_addr, int len)
 
   // error checking first. all or nothing.
   char *slider = virtual_addr;
+  // int skip[len];
   for (int i = 0; i < len; i++)
   {
+    // skip[i] = 0;
     // check page table for each translation first
     char *kvp = uva2ka(mypd, slider);
+    // cprintf("%d, %d\n", i, len);
     cprintf("p4Debug: slider %p, kvp for err check is %p\n", slider, kvp);
     if (!kvp)
     {
       cprintf("p4Debug: mencrypt: kvp = NULL\n");
       return -1;
+      // skip[i] = 1;
     }
     slider = slider + PGSIZE;
   }
@@ -493,6 +499,10 @@ int mencrypt(char *virtual_addr, int len)
   slider = virtual_addr;
   for (int i = 0; i < len; i++)
   {
+    // if (skip[i] == 1)
+    // {
+    //   continue;
+    // }
     cprintf("p4Debug: mencryptr: VPN %d, %p\n", PPN(slider), slider);
     // kvp = kernel virtual pointer
     // virtual address in kernel space that maps to the given pointer
@@ -523,25 +533,22 @@ int mencrypt(char *virtual_addr, int len)
   return 0;
 }
 
-int notInQueue(int *queue, pte_t *pte)
+int notInQueue(pte_t **queue, pte_t *pte)
 {
   for (int i = 0; i < CLOCKSIZE; i++)
   {
-    if (queue[i] == *pte)
+    if (queue[i] == pte)
     {
       return 0;
     }
   }
   return 1;
-  // pte          = 0x0111
-  // PTE_U        = 0x0010
-  // ~PTE_U       = 0x1101
-  // pte & ~PTE_U = 0x0101
 }
-
 
 int getpgtable(struct pt_entry *pt_entries, int num, int wsetOnly)
 {
+    cprintf("RAG:");
+
   cprintf("p4Debug: getpgtable: %p, %d, %d\n", pt_entries, num, wsetOnly);
 
   struct proc *curproc = myproc();
@@ -555,7 +562,6 @@ int getpgtable(struct pt_entry *pt_entries, int num, int wsetOnly)
   int i = 0;
   for (;; uva -= PGSIZE)
   {
-
     pte_t *pte = walkpgdir(pgdir, (const void *)uva, 0);
 
     if (!(*pte & PTE_U) || !(*pte & (PTE_P | PTE_E)))

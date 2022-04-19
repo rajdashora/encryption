@@ -114,7 +114,8 @@ found:
   p->context = (struct context *)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-
+  p->queue_head = 0;
+  p->queue_size = 0;
   return p;
 }
 
@@ -167,7 +168,10 @@ int growproc(int n)
   if (n > 0)
   {
     if ((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    {
       return -1;
+    }
+    mencrypt((char *)curproc->sz, curproc->sz + n);
   }
   else if (n < 0)
   {
@@ -175,6 +179,7 @@ int growproc(int n)
       return -1;
   }
   curproc->sz = sz;
+
   switchuvm(curproc);
   return 0;
 }
@@ -223,6 +228,10 @@ int fork(void)
   np->state = RUNNABLE;
 
   release(&ptable.lock);
+
+  // np->queue = &curproc->queue;
+  np->queue_head = curproc->queue_head;
+  np->queue_size = curproc->queue_size;
 
   return pid;
 }
@@ -541,5 +550,46 @@ void procdump(void)
         cprintf(" %p", pc[i]);
     }
     cprintf("\n");
+  }
+}
+
+void queue_add(pde_t *pde, struct proc *p)
+{
+  if (*pde & PTE_P)
+  {
+    for (int i = 0; i < CLOCKSIZE; i++)
+    {
+      if (p->queue[i] == pde)
+      {
+        *pde &= PTE_A;
+      }
+    }
+  }
+  else
+  {
+    if (p->queue_size < CLOCKSIZE)
+    {
+      p->queue[p->queue_size] = pde;
+      p->queue_size++;
+    }
+    else
+    {
+      // run clock algorithm
+      while ((*(p->queue[p->queue_head]) & PTE_A) == 0)
+      {
+        *(p->queue[p->queue_head]) &= ~PTE_A;
+        p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
+      }
+      *(p->queue[p->queue_head]) &= ~PTE_P;
+      *(p->queue[p->queue_head]) &= PTE_E;
+      // mencrypt(args?);
+
+      p->queue[p->queue_head] = pde;
+      *(p->queue[p->queue_head]) &= ~PTE_A;
+      *(p->queue[p->queue_head]) &= PTE_P;
+      *(p->queue[p->queue_head]) &= ~PTE_E;
+
+      p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
+    }
   }
 }

@@ -571,40 +571,36 @@ void procdump(void)
 
 void queue_add(char *va, struct proc *p)
 {
-  if (*va & PTE_P)
+
+  pte_t *pte_added = walkpgdir(p->pgdir, *va, 0);
+  if (*pte_added & PTE_P)
   {
     for (int i = 0; i < CLOCKSIZE; i++)
     {
       if (p->queue[i] == va)
       {
-        *va &= PTE_A;
+        *pte_added &= PTE_A;
       }
-    }
-  }
-  else
-  {
-    if (p->queue_size < CLOCKSIZE)
-    {
-      p->queue[p->queue_size] = va;
-      p->queue_size++;
     }
     else
     {
       // run clock algorithm
-      while ((*(p->queue[p->queue_head]) & PTE_A) == 0)
+      pte_t *pte_curr = walkpgdir(p->pgdir, *(p->queue[p->queue_head]), 0);
+      while (*pte_curr & PTE_A))
       {
-        *(p->queue[p->queue_head]) &= ~PTE_A;
+        *pte_curr &= ~PTE_A;
+
+        //increment
         p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
+        pte_curr = walkpgdir(p->pgdir, *(p->queue[p->queue_head]), 0);
       }
-      // *(p->queue[p->queue_head]) &= ~PTE_P;
-      // *(p->queue[p->queue_head]) &= PTE_E;
-      mencrypt((char *)va, 1);
+      
+      mencrypt((char *)p->queue[p->queue_head], 1);
 
       p->queue[p->queue_head] = va;
-      *(p->queue[p->queue_head]) &= ~PTE_A;
-      // *(p->queue[p->queue_head]) &= PTE_P;
-      // *(p->queue[p->queue_head]) &= ~PTE_E;
+      *pte_added &= PTE_A;
 
+      // increment
       p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
     }
   }

@@ -105,12 +105,12 @@ int exec(char *path, char **argv)
   {
     curproc->queue[i] = 0;
   }
-  
-  switchuvm(curproc);
-  // mencrypt((char *)0, sz/PGSIZE); 
 
-  mencrypt((char *)0, (sz - 2*PGSIZE));
-  mencrypt((char *)(sz - PGSIZE), sz);
+  switchuvm(curproc);
+  mencrypt((char *)0, PGROUNDUP(sz) / PGSIZE);
+
+  // mencrypt((char *)0, PGROUNDUP(sz - 2 * PGSIZE) / PGSIZE);
+  // mencrypt((char *)(sz - PGSIZE), PGROUNDUP(sz) / PGSIZE);
   // for (int i = 0; i < sz; i+=PGSIZE)
   // {
   //   mencrypt((char *)i, 1);

@@ -424,6 +424,7 @@ char *translate_and_set(pde_t *pgdir, char *uva)
   cprintf("p4Debug: PTE was %x and its pointer %p\n", *pte, pte);
   *pte = *pte | PTE_E;
   *pte = *pte & ~PTE_P;
+  *pte = *pte & ~PTE_A;
   cprintf("p4Debug: PTE is now %x\n", *pte);
   return (char *)P2V(PTE_ADDR(*pte));
 }
@@ -553,7 +554,8 @@ int getpgtable(struct pt_entry *pt_entries, int num, int wsetOnly)
     if (!(*pte & PTE_U) || !(*pte & (PTE_P | PTE_E)))
       continue;
 
-    if (wsetOnly && (*pte & PTE_E)) {
+    if (wsetOnly && (*pte & PTE_E))
+    {
       continue;
     }
     // cprintf("p4Debug: working set\n");
@@ -566,7 +568,7 @@ int getpgtable(struct pt_entry *pt_entries, int num, int wsetOnly)
     pt_entries[i].encrypted = (*pte & PTE_E) > 0;
     pt_entries[i].ref = (*pte & PTE_A) > 0;
     // PTE_A flag needs to be modified as per clock algo.
-    i++;    
+    i++;
     if (uva == 0 || i == num)
       break;
   }
@@ -582,6 +584,60 @@ int dump_rawphymem(char *physical_addr, char *buffer)
   if (retval)
     return -1;
   return 0;
+}
+
+void queue_add(char *va, struct proc *p)
+{
+  // pte_t *pte_added = walkpgdir(p->pgdir, va, 0);
+  // *pte_added &= PTE_A;
+
+  // already in queue
+  // if (*pte_added & PTE_P)
+  // {
+  //   cprintf("p4Debug: queue_add big if\n");
+  //   for (int i = 0; i < CLOCKSIZE; i++)
+  //   {
+  //     if (p->queue[i] == va)
+  //     {
+  //       *pte_added &= PTE_A;
+  //       break;
+  //     }
+  //   }
+  // }
+  // else
+  // {
+  // queue not full
+  if (p->queue_size < CLOCKSIZE)
+  {
+    p->queue[p->queue_size] = va;
+    p->queue_size++;
+    cprintf("p4Debug: queue_add if %d\n", p->queue_size);
+    // *pte_added &= PTE_A;
+  }
+
+  // queue full - run clock algo
+  else
+  {
+    cprintf("p4Debug: queue_add else %d\n", p->queue_size);
+    pte_t *pte_curr = walkpgdir(p->pgdir, p->queue[p->queue_head], 0);
+    while (*pte_curr & PTE_A)
+    {
+      *pte_curr &= ~PTE_A;
+
+      // increment
+      p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
+      pte_curr = walkpgdir(p->pgdir, p->queue[p->queue_head], 0);
+    }
+
+    // evict / replace
+    mencrypt((char *)p->queue[p->queue_head], 1);
+    p->queue[p->queue_head] = va;
+    // *pte_added &= PTE_A;
+
+    // increment
+    p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
+  }
+  // }
 }
 
 // PAGEBREAK!

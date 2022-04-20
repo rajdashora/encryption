@@ -461,7 +461,7 @@ int mdecrypt(char *virtual_addr)
     *slider = *slider ^ 0xFF;
     slider++;
   }
-  queue_add(pte, p);
+  queue_add(virtual_addr, p);
   return 0;
 }
 
@@ -533,22 +533,8 @@ int mencrypt(char *virtual_addr, int len)
   return 0;
 }
 
-int notInQueue(pte_t **queue, pte_t *pte)
-{
-  for (int i = 0; i < CLOCKSIZE; i++)
-  {
-    if (queue[i] == pte)
-    {
-      return 0;
-    }
-  }
-  return 1;
-}
-
 int getpgtable(struct pt_entry *pt_entries, int num, int wsetOnly)
 {
-    cprintf("RAG:");
-
   cprintf("p4Debug: getpgtable: %p, %d, %d\n", pt_entries, num, wsetOnly);
 
   struct proc *curproc = myproc();
@@ -567,8 +553,10 @@ int getpgtable(struct pt_entry *pt_entries, int num, int wsetOnly)
     if (!(*pte & PTE_U) || !(*pte & (PTE_P | PTE_E)))
       continue;
 
-    if (wsetOnly && notInQueue(curproc->queue, pte))
+    if (wsetOnly && (*pte & PTE_E)) {
       continue;
+    }
+    // cprintf("p4Debug: working set\n");
 
     pt_entries[i].pdx = PDX(uva);
     pt_entries[i].ptx = PTX(uva);
@@ -577,8 +565,8 @@ int getpgtable(struct pt_entry *pt_entries, int num, int wsetOnly)
     pt_entries[i].writable = (*pte & PTE_W) > 0;
     pt_entries[i].encrypted = (*pte & PTE_E) > 0;
     pt_entries[i].ref = (*pte & PTE_A) > 0;
-    // PT_A flag needs to be modified as per clock algo.
-    i++;
+    // PTE_A flag needs to be modified as per clock algo.
+    i++;    
     if (uva == 0 || i == num)
       break;
   }

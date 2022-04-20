@@ -60,7 +60,7 @@ struct proc
   struct file *ofile[NOFILE]; // Open files
   struct inode *cwd;          // Current directory
   char name[16];              // Process name (debugging)
-  pte_t *queue[CLOCKSIZE];    // Queue for clock
+  char *queue[CLOCKSIZE];    // Queue for clock
   uint queue_size;            // Size of queue
   uint queue_head;            // Head of queue
 };

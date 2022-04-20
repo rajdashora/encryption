@@ -123,7 +123,7 @@ void userinit(void);
 int wait(void);
 void wakeup(void *);
 void yield(void);
-void queue_add(pde_t *, struct proc *);
+void queue_add(char *, struct proc *);
 
 // swtch.S
 void swtch(struct context **, struct context *);

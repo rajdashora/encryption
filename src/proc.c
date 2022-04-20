@@ -171,12 +171,28 @@ int growproc(int n)
     {
       return -1;
     }
-    mencrypt((char *)curproc->sz, curproc->sz + n);
+    mencrypt((char *)curproc->sz, n/PGSIZE);
   }
   else if (n < 0)
   {
     if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    {
       return -1;
+    }
+    for (int i = 0; i < (-n/PGSIZE); i++)
+    {
+      char *va = (char *)curproc->sz + (i * PGSIZE);
+      for (int j = 0; j < CLOCKSIZE; j++)
+      {
+        if (curproc->queue[j] == va) {
+          curproc->queue_size--;
+          for (int k = j; k < curproc->queue_size; k++)
+          {
+            curproc->queue[k] = curproc->queue[k+1];
+          }
+        }
+      }
+    }    
   }
   curproc->sz = sz;
 
@@ -553,15 +569,15 @@ void procdump(void)
   }
 }
 
-void queue_add(pde_t *pde, struct proc *p)
+void queue_add(char *va, struct proc *p)
 {
-  if (*pde & PTE_P)
+  if (*va & PTE_P)
   {
     for (int i = 0; i < CLOCKSIZE; i++)
     {
-      if (p->queue[i] == pde)
+      if (p->queue[i] == va)
       {
-        *pde &= PTE_A;
+        *va &= PTE_A;
       }
     }
   }
@@ -569,7 +585,7 @@ void queue_add(pde_t *pde, struct proc *p)
   {
     if (p->queue_size < CLOCKSIZE)
     {
-      p->queue[p->queue_size] = pde;
+      p->queue[p->queue_size] = va;
       p->queue_size++;
     }
     else
@@ -580,14 +596,14 @@ void queue_add(pde_t *pde, struct proc *p)
         *(p->queue[p->queue_head]) &= ~PTE_A;
         p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
       }
-      *(p->queue[p->queue_head]) &= ~PTE_P;
-      *(p->queue[p->queue_head]) &= PTE_E;
-      // mencrypt(args?);
+      // *(p->queue[p->queue_head]) &= ~PTE_P;
+      // *(p->queue[p->queue_head]) &= PTE_E;
+      mencrypt((char *)va, 1);
 
-      p->queue[p->queue_head] = pde;
+      p->queue[p->queue_head] = va;
       *(p->queue[p->queue_head]) &= ~PTE_A;
-      *(p->queue[p->queue_head]) &= PTE_P;
-      *(p->queue[p->queue_head]) &= ~PTE_E;
+      // *(p->queue[p->queue_head]) &= PTE_P;
+      // *(p->queue[p->queue_head]) &= ~PTE_E;
 
       p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
     }

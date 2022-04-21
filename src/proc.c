@@ -171,7 +171,7 @@ int growproc(int n)
     {
       return -1;
     }
-    mencrypt((char *)curproc->sz, n/PGSIZE);
+    mencrypt((char *)curproc->sz, (PGROUNDUP(n))/PGSIZE);
   }
   else if (n < 0)
   {

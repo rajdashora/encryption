@@ -61,8 +61,8 @@ struct proc
   struct inode *cwd;          // Current directory
   char name[16];              // Process name (debugging)
   char *queue[CLOCKSIZE];    // Queue for clock
-  uint queue_size;            // Size of queue
-  uint queue_head;            // Head of queue
+  int queue_size;            // Size of queue
+  int queue_head;            // Head of queue
 };
 
 // Process memory is laid out contiguously, low addresses first:

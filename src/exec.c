@@ -106,6 +106,8 @@ int exec(char *path, char **argv)
   {
     curproc->queue[i] = (char *)-1;
   }
+  curproc->queue_size = 0;
+  curproc->queue_head = 0;
 
   switchuvm(curproc);
 
@@ -117,6 +119,8 @@ int exec(char *path, char **argv)
   if (mencrypt((char *)sz - PGSIZE, 1)) {
     return -1;
   }
+
+  switchuvm(curproc);
 
   // mencrypt((char *)0, PGROUNDUP(sz - 2 * PGSIZE) / PGSIZE);
   // mencrypt((char *)(sz - PGSIZE), PGROUNDUP(sz) / PGSIZE);

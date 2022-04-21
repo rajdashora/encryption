@@ -422,9 +422,10 @@ char *translate_and_set(pde_t *pgdir, char *uva)
     return 0;
   // p4Debug: Set Page as encrypted and not present so that we can trap(see trap.c) to decrypt page
   cprintf("p4Debug: PTE was %x and its pointer %p\n", *pte, pte);
-  *pte = *pte | PTE_E;
-  *pte = *pte & ~PTE_P;
+  *pte = *pte | PTE_E; // set to 1
+  *pte = *pte & ~PTE_P; // set to 0
   *pte = *pte & ~PTE_A;
+
   cprintf("p4Debug: PTE is now %x\n", *pte);
   return (char *)P2V(PTE_ADDR(*pte));
 }
@@ -622,7 +623,7 @@ void queue_add(char *va, struct proc *p)
     pte_t *pte_curr = walkpgdir(p->pgdir, p->queue[p->queue_head], 0);
     while (*pte_curr & PTE_A)
     {
-      *pte_curr &= ~PTE_A;
+      *pte_curr = *pte_curr & ~PTE_A;
 
       // increment
       p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
@@ -635,8 +636,10 @@ void queue_add(char *va, struct proc *p)
     // *pte_added &= PTE_A;
 
     // increment
-    p->queue_head = (p->queue_head + 1) % CLOCKSIZE;
   }
+  p->queue_head = (p->queue_head + 1) % CLOCKSIZE; //moved to after if else because need to increment regardless
+  switchuvm(myproc());
+
   // }
 }
 

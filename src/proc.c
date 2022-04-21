@@ -179,35 +179,24 @@ int growproc(int n)
     for (int i = 0; i < (PGROUNDUP(-n)/PGSIZE); i++)
     {
       // va of page
-      char *va = (char *)curproc->sz - (i * PGSIZE);
+      char *va = (char *)curproc->sz - ((i+1) * PGSIZE);
 
       // go thru clock queue
-      // for (int j = 0; j < CLOCKSIZE; j++)
-      // {
+      for (int j = 0; j < CLOCKSIZE; j++)
+      {
         // remove from clock queue
-        // if (curproc->queue[j] == va) {
-        //   mencrypt(va, 1);
-        //   curproc->queue_size--;
-        //   while ((j+1) % CLOCKSIZE != curproc->queue_head)
-        //   {
-        //     curproc->queue[j] = curproc->queue[j+1 % CLOCKSIZE];
-        //     j = (j + 1) % CLOCKSIZE;
-        //   }
-        //   curproc->queue_head = j;
-        //   break;
-        // }
-      // }
-      uint idx = curproc->queue_head;
-      do {
-        if (curproc->queue[curproc->queue_head] == va) {
-          // mencrypt(va, 1);
-          curproc->queue[curproc->queue_head] = (char *)-1;
+        if (curproc->queue[j] == va) {
+          mencrypt(va, 1);
           curproc->queue_size--;
-          curproc->queue_head = (curproc->queue_head + 1) % CLOCKSIZE;
+          while ((j+1) % CLOCKSIZE != curproc->queue_head)
+          {
+            curproc->queue[j] = curproc->queue[j+1 % CLOCKSIZE];
+            j = (j + 1) % CLOCKSIZE;
+          }
+          curproc->queue_head = j;
           break;
         }
-        curproc->queue_head = (curproc->queue_head + 1) % CLOCKSIZE;
-      } while (curproc->queue_head != idx);
+      }
     }
     if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
     {

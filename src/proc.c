@@ -175,24 +175,43 @@ int growproc(int n)
   }
   else if (n < 0)
   {
+    // iterate through pages deallocated
+    for (int i = 0; i < (PGROUNDUP(-n)/PGSIZE); i++)
+    {
+      // va of page
+      char *va = (char *)curproc->sz - (i * PGSIZE);
+
+      // go thru clock queue
+      // for (int j = 0; j < CLOCKSIZE; j++)
+      // {
+        // remove from clock queue
+        // if (curproc->queue[j] == va) {
+        //   mencrypt(va, 1);
+        //   curproc->queue_size--;
+        //   while ((j+1) % CLOCKSIZE != curproc->queue_head)
+        //   {
+        //     curproc->queue[j] = curproc->queue[j+1 % CLOCKSIZE];
+        //     j = (j + 1) % CLOCKSIZE;
+        //   }
+        //   curproc->queue_head = j;
+        //   break;
+        // }
+      // }
+      uint idx = curproc->queue_head;
+      do {
+        if (curproc->queue[curproc->queue_head] == va) {
+          // mencrypt(va, 1);
+          curproc->queue[curproc->queue_head] = (char *)-1;
+          curproc->queue_size--;
+          curproc->queue_head = (curproc->queue_head + 1) % CLOCKSIZE;
+          break;
+        }
+        curproc->queue_head = (curproc->queue_head + 1) % CLOCKSIZE;
+      } while (curproc->queue_head != idx);
+    }
     if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
     {
       return -1;
-    }
-    for (int i = 0; i < (-n/PGSIZE); i++)
-    {
-      char *va = (char *)curproc->sz + (i * PGSIZE);
-      for (int j = 0; j < CLOCKSIZE; j++)
-      {
-        if (curproc->queue[j] == va) {
-          mencrypt(va, 1);
-          curproc->queue_size--;
-          for (int k = j; k < curproc->queue_size; k++)
-          {
-            curproc->queue[k] = curproc->queue[k+1];
-          }
-        }
-      }
     }    
   }
   curproc->sz = sz;
@@ -246,7 +265,10 @@ int fork(void)
 
   release(&ptable.lock);
 
-  // np->queue = &curproc->queue;
+  for (i = 0; i < CLOCKSIZE; i++)
+  {
+    np->queue[i] = curproc->queue[i];
+  }
   np->queue_head = curproc->queue_head;
   np->queue_size = curproc->queue_size;
 

@@ -64,6 +64,7 @@ int exec(char *path, char **argv)
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
   sz = PGROUNDUP(sz);
+  uint sz_1 = sz;
   if ((sz = allocuvm(pgdir, sz, sz + 2 * PGSIZE)) == 0)
     goto bad;
   clearpteu(pgdir, (char *)(sz - 2 * PGSIZE));
@@ -103,11 +104,19 @@ int exec(char *path, char **argv)
   curproc->tf->esp = sp;
   for (int i = 0; i < CLOCKSIZE; i++)
   {
-    curproc->queue[i] = 0;
+    curproc->queue[i] = (char *)-1;
   }
 
   switchuvm(curproc);
-  mencrypt((char *)0, PGROUNDUP(sz) / PGSIZE);
+
+  uint num_pages = PGROUNDUP(sz_1) / PGSIZE;
+
+  if (mencrypt((char *)0, num_pages)) {
+    return -1;
+  }
+  if (mencrypt((char *)sz - PGSIZE, 1)) {
+    return -1;
+  }
 
   // mencrypt((char *)0, PGROUNDUP(sz - 2 * PGSIZE) / PGSIZE);
   // mencrypt((char *)(sz - PGSIZE), PGROUNDUP(sz) / PGSIZE);
